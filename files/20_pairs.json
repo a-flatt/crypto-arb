@@ -1,0 +1,98 @@
+[
+    {
+        "index": 0,
+        "address": "0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc",
+        "token0": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "symbol": "USDC",
+            "decimal": 6
+        },
+        "token1": {
+            "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+            "symbol": "WETH",
+            "decimal": 18
+        },
+        "reserve0": 176560092727090,
+        "reserve1": 524595304157729979983018
+    },
+    {
+        "index": 1,
+        "address": "0x3139Ffc91B99aa94DA8A2dc13f1fC36F9BDc98eE",
+        "token0": {
+            "address": "0x8E870D67F660D95d5be530380D0eC0bd388289E1",
+            "symbol": "PAX",
+            "decimal": 18
+        },
+        "token1": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "symbol": "USDC",
+            "decimal": 6
+        },
+        "reserve0": 1097215871959,
+        "reserve1": 1
+    },
+    {
+        "index": 3,
+        "address": "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11",
+        "token0": {
+            "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+            "symbol": "DAI",
+            "decimal": 18
+        },
+        "token1": {
+            "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+            "symbol": "WETH",
+            "decimal": 18
+        },
+        "reserve0": 147756526248031590428050982,
+        "reserve1": 441991822316332502643139
+    },
+    {
+        "index": 4,
+        "address": "0x07F068ca326a469Fc1d87d85d448990C8cBa7dF9",
+        "token0": {
+            "address": "0x408e41876cCCDC0F92210600ef50372656052a38",
+            "symbol": "REN",
+            "decimal": 18
+        },
+        "token1": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "symbol": "USDC",
+            "decimal": 6
+        },
+        "reserve0": 2576156975388982970662,
+        "reserve1": 457821692
+    },
+    {
+        "index": 5,
+        "address": "0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5",
+        "token0": {
+            "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+            "symbol": "DAI",
+            "decimal": 18
+        },
+        "token1": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "symbol": "USDC",
+            "decimal": 6
+        },
+        "reserve0": 1916219085245778868760905,
+        "reserve1": 1929099476762
+    },
+    {
+        "index": 7,
+        "address": "0x33C2d48Bc95FB7D0199C5C693e7a9F527145a9Af",
+        "token0": {
+            "address": "0x1F573D6Fb3F13d689FF844B4cE37794d79a7FF1C",
+            "symbol": "BNT",
+            "decimal": 18
+        },
+        "token1": {
+            "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+            "symbol": "DAI",
+            "decimal": 18
+        },
+        "reserve0": 949,
+        "reserve1": 1067
+    }
+]
