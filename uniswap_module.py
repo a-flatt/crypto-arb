@@ -1,16 +1,21 @@
 import json
 import asyncio
-import requests
 import base64
+
 import sys
 sys.path.append('..')
+from uniswap_python_port.uniswap import *
+
+import requests
 from requests.auth import HTTPBasicAuth
+
+import web3
 from web3.auto.gethdev import w3
 from web3.middleware import geth_poa_middleware
-import web3
-from uniswap_python_port.uniswap import *
+
 from gql import Client, gql
 from gql.transport.aiohttp import AIOHTTPTransport
+
 from pairs import Pair
 
 # Pair abi info; to move later
@@ -40,21 +45,42 @@ uniswap = Uniswap(address=address,
                   web3=web3, 
                   factory_contract_addr=factory_contract_addr, router_contract_addr=router_contract_addr)
 
-"""
-def handle_event(event):
-      print(w3.toJSON(event))
-  
-async def log_loop(event_filter, poll_interval):
-  while True:
-      for PairCreated in event_filter.get_new_entries():
-            handle_event(PairCreated)
-      await asyncio.sleep(poll_interval)
-"""
+def buildPairs(w3):
+
+    pairList = []
+
+    cake_pairs = json.load(open("/Users/adamplatt/code/fun/crypto-arb/files/50_pairs_pancake.json"))["data"]["pairs"]
+
+    for i in range(10):
+        pair_addr = cake_pairs[i]['id']
+        pair_contract = util._load_pair_contract(w3, pair_abi, pair_addr)
+        token0addr = pair_contract.functions.token0().call()
+        token0sym = "ABC"
+        token1addr = pair_contract.functions.token1().call()
+        token1sym = "XYZ"
+
+        reserves = pair_contract.functions.getReserves().call()
+        reserve0 = reserves[0]
+        reserve1 = reserves[1]
+
+        pair = Pair(w3,
+                    pair_addr,
+                    token0addr,
+                    token0sym,
+                    token1addr,
+                    token1sym,
+                    reserve0,
+                    reserve1)
+
+        pairList.append(pair)
+
+    return pairList
 
 def test():
 
-    pair_address = uniswap.factory_contract.functions.allPairs(1).call()
-    pair_contract = util._load_pair_contract(w3, pair_abi, pair_address)
+    """
+    # pair_address = uniswap.factory_contract.functions.allPairs(1).call()
+    # pair_contract = util._load_pair_contract(w3, pair_abi, pair_address)
     
     # Info to build pair:
     token0addr = pair_contract.functions.token0().call()
@@ -64,7 +90,8 @@ def test():
     reserve0 = pair_contract.functions.getReserves().call()[0]
     reserve1 = pair_contract.functions.getReserves().call()[1]
 
-    pair = Pair(pair_address,
+    pair = Pair(w3,
+                pair_address,
                 token0addr,
                 token0sym,
                 token1addr,
@@ -72,5 +99,8 @@ def test():
                 reserve0,
                 reserve1)
     
-    print(pair.pairStruct)
-
+    pair.monitorPair()
+    
+    """
+    pairList = buildPairs(w3)
+    print(pairList[2].pairStruct)
