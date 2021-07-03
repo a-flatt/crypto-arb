@@ -31,7 +31,7 @@ BSC_PROVIDER = web3.Web3.HTTPProvider(BSC_NODE)
 w3 = web3.Web3(BSC_PROVIDER)
 w3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
-# Create Uniswap instance;
+# Create Uniswap instance; move to a config file
 address = None        
 private_key = None 
 version = 2                       
@@ -49,15 +49,15 @@ def buildPairs(w3):
 
     pairList = []
 
-    cake_pairs = json.load(open("/Users/adamplatt/code/fun/crypto-arb/files/50_pairs_pancake.json"))["data"]["pairs"]
-
-    for i in range(10):
+    cake_pairs = json.load(open("./files/50_pairs_pancake.json"))["data"]["pairs"]
+    
+    for i in range(len(cake_pairs)):
         pair_addr = cake_pairs[i]['id']
         pair_contract = util._load_pair_contract(w3, pair_abi, pair_addr)
         token0addr = pair_contract.functions.token0().call()
-        token0sym = "ABC"
+        token0sym = cake_pairs[i]['token0']['symbol']
         token1addr = pair_contract.functions.token1().call()
-        token1sym = "XYZ"
+        token1sym = cake_pairs[i]['token1']['symbol']
 
         reserves = pair_contract.functions.getReserves().call()
         reserve0 = reserves[0]
@@ -103,4 +103,4 @@ def test():
     
     """
     pairList = buildPairs(w3)
-    print(pairList[2].pairStruct)
+    print(pairList[0].pairStruct)
