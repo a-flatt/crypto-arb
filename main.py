@@ -1,151 +1,89 @@
 import json
-from decimal import Decimal
+import asyncio
+import base64
 
-startToken = {
-        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-        "symbol": "WETH",
-        "decimal": 18,
-    }
+import sys
+sys.path.append('..')
+from uniswap_python_port.uniswap import *
 
-tradingPairs = json.load(open('100_pairs.json'))
+import requests
+from requests.auth import HTTPBasicAuth
 
-baseToken = exitToken = startToken
-currentPairs = []
-tradePath = [baseToken]
-trades = []
-maxTurns = 100
-count = 0
-d997 = Decimal(997)
-d1000 = Decimal(1000)
+import web3
+from web3.auto.gethdev import w3
+from web3.middleware import geth_poa_middleware
 
-def getAmountOut(amountIn, reserveIn, reserveOut):
-    assert amountIn > 0
-    assert reserveIn > 0 and reserveOut > 0
-    if not isinstance(amountIn, Decimal):
-        amountIn = Decimal(amountIn)
-    if not isinstance(reserveIn, Decimal):
-        reserveIn = Decimal(reserveIn)
-    if not isinstance(reserveOut, Decimal):
-        reserveOut = Decimal(reserveOut)
-    return d997*amountIn*reserveOut/(d1000*reserveIn+d997*amountIn)
+from gql import Client, gql
+from gql.transport.aiohttp import AIOHTTPTransport
 
-def getOptimalAmount(Ea, Eb):
-    if Ea > Eb:
-        return None
-    if not isinstance(Ea, Decimal):
-        Ea = Decimal(Ea)
-    if not isinstance(Eb, Decimal):
-        Eb = Decimal(Eb)
-    return Decimal(int((Decimal.sqrt(Ea*Eb*d997*d1000)-Ea*d1000)/d997))
+from pair import Pair
+from helper import findTradePaths
 
-def adjustReserve(token, amount):
-    # res = Decimal(amount)*Decimal(pow(10, 18-token['decimal']))
-    # return Decimal(int(res))
-    return amount
+# Pair abi info; to move later
+pair_abi = json.load(open("files/abi/pairs.abi"))['abi']
 
-def toInt(n):
-    return Decimal(int(n))
+# Setup GraphQL to query pairs; tidy
+transport = AIOHTTPTransport(url="https://bsc.streamingfast.io/subgraphs/name/pancakeswap/exchange-v2")
+client = Client(transport=transport, fetch_schema_from_transport=True)
+    
+# Bunch of config; again, tidy
+BSC_NODE = "https://bsc-dataseed.binance.org/"
+BSC_PROVIDER = web3.Web3.HTTPProvider(BSC_NODE)
+w3 = web3.Web3(BSC_PROVIDER)
+w3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
-def getEaEb(tokenIn, pairs):
-    Ea = None
-    Eb = None
-    idx = 0
-    tokenOut = tokenIn.copy()
-    for pair in pairs:
-        if idx == 0:
-            if tokenIn['address'] == pair['token0']['address']:
-                tokenOut = pair['token1']
-            else:
-                tokenOut = pair['token0']
-        if idx == 1:
-            Ra = adjustReserve(pairs[0]['token0'], pairs[0]['reserve0'])
-            Rb = adjustReserve(pairs[0]['token1'], pairs[0]['reserve1'])
-            if tokenIn['address'] == pairs[0]['token1']['address']:
-                temp = Ra
-                Ra = Rb
-                Rb = temp
-            Rb1 = adjustReserve(pair['token0'], pair['reserve0'])
-            Rc = adjustReserve(pair['token1'], pair['reserve1'])
-            if tokenOut['address'] == pair['token1']['address']:
-                temp = Rb1
-                Rb1 = Rc
-                Rc = temp
-                tokenOut = pair['token0']
-            else:
-                tokenOut = pair['token1']
-            Ea = toInt(d1000*Ra*Rb1/(d1000*Rb1+d997*Rb))
-            Eb = toInt(d997*Rb*Rc/(d1000*Rb1+d997*Rb))
-        if idx > 1:
-            Ra = Ea
-            Rb = Eb
-            Rb1 = adjustReserve(pair['token0'], pair['reserve0'])
-            Rc = adjustReserve(pair['token1'], pair['reserve1'])
-            if tokenOut['address'] == pair['token1']['address']:
-                temp = Rb1
-                Rb1 = Rc
-                Rc = temp
-                tokenOut = pair['token0']
-            else:
-                tokenOut = pair['token1']
-            Ea = toInt(d1000*Ra*Rb1/(d1000*Rb1+d997*Rb))
-            Eb = toInt(d997*Rb*Rc/(d1000*Rb1+d997*Rb))
-        idx += 1
-    return Ea, Eb
+# Create Uniswap instance; move to a config file
+address = None        
+private_key = None 
+version = 2                       
+web3 = w3
+factory_contract_addr = w3.toChecksumAddress("0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73")
+router_contract_addr = w3.toChecksumAddress("0x10ED43C718714eb63d5aA57B78B54704E256024E")
 
-def findTradePaths(tradingPairs, baseToken, exitToken, tradePath, trades, currentPairs):
-    """
-    Pending. 
-    """    
-    for i in range(len(tradingPairs)):
-        newTradePath = tradePath.copy()
-        pair = tradingPairs[i]
-        if not pair['token0']['address'] == baseToken['address'] and not pair['token1']['address'] == baseToken['address']:
-            continue
-        if baseToken['address'] == pair['token0']['address']:
-            poolToken = pair['token1']
-        else:
-            poolToken = pair['token0']
+uniswap = Uniswap(address=address, 
+                  private_key=private_key, 
+                  version=version, 
+                  web3=web3, 
+                  factory_contract_addr=factory_contract_addr, router_contract_addr=router_contract_addr)
 
-        newTradePath.append(poolToken)
-        
-        if poolToken['address'] == exitToken['address'] and len(tradePath) > 2:
-            # trades.append(newTradePath)
-            Ea, Eb = getEaEb(exitToken, currentPairs + [pair])
-            newTrade = {'route': currentPairs + [pair], 'path': newTradePath, 'Ea': Ea, 'Eb': Eb }
-            if Ea and Eb: print('True')
-            print(Ea)
-            print(Eb)
-            
-            if Ea < Eb: 
-                print('True')
-            else: 
-                print('False')
-            
-            
-            if Ea and Eb and Ea < Eb:
-                newTrade['optimalAmount'] = getOptimalAmount(Ea, Eb)
-                print('optimal amount:', newTrade['optimalAmount'])
-                if newTrade['optimalAmount'] > 0:
-                    newTrade['outputAmount'] = getAmountOut(newTrade['optimalAmount'], Ea, Eb)
-                    newTrade['profit'] = newTrade['outputAmount']-newTrade['optimalAmount']
-                    newTrade['p'] = int(newTrade['profit'])/pow(10, exitToken['decimal'])
-                else:
-                    continue
-                trades.append(newTrade)
-                print(newTrade)
-            
-        elif maxTurns < 1:
-            break
-        else:
-            _tradingPairs = tradingPairs[:i] + tradingPairs[i+1:]
-            findTradePaths(_tradingPairs, poolToken, exitToken, newTradePath, trades, currentPairs + [pair])
-    return trades
+def buildPairs(w3):
 
-def main():
+    pairList = []
 
-    tradeset = findTradePaths(tradingPairs, baseToken, exitToken, tradePath, trades, currentPairs)
-    for trade in tradeset:
+    cake_pairs = json.load(open("./files/50_pairs_pancake.json"))["data"]["pairs"]
+    print(len(cake_pairs))
+    
+    for i in range(100):
+        pair_addr = cake_pairs[i]['id']
+        pair_contract = util._load_pair_contract(w3, pair_abi, pair_addr)
+        token0addr = pair_contract.functions.token0().call()
+        token0sym = cake_pairs[i]['token0']['symbol']
+        token1addr = pair_contract.functions.token1().call()
+        token1sym = cake_pairs[i]['token1']['symbol']
+
+        reserves = pair_contract.functions.getReserves().call()
+        reserve0 = reserves[0]
+        reserve1 = reserves[1]
+
+        pair = Pair(w3,
+                    pair_addr,
+                    token0addr,
+                    token0sym,
+                    token1addr,
+                    token1sym,
+                    reserve0,
+                    reserve1)
+
+        pairList.append(pair)
+
+    return pairList
+
+if __name__ == "__main__":
+
+    pairList = buildPairs(w3)
+    trades = findTradePaths(pairList)
+    for trade in trades:
         print(trade)
+    # Create instances of those paths, to allow for tracker functions to be perfomed on instances.
 
-
-main()
+    # print(pairList[0].pairStruct)
